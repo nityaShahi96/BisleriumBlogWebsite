@@ -1,0 +1,138 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@inject UserManager<ApplicationUser> _userManager;
+@{
+	var loggedInUser = new ApplicationUser();
+	loggedInUser = _userManager.Users.FirstOrDefault(x => x.UserName == User.Identity!.Name);
+}
+
+
+@using BlogWebsite.Data;
+@using BlogWebsite.ViewModels;
+@inject ApplicationDbContext _context;
+
+@{
+	var setting = _context.settings!.ToList();
+	var vm = new SettingVM()
+			{
+				SiteName = setting[0].SiteName,
+			};
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport"
+		  content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+	<meta name="description" content="Techno Blog is a platform dedicated to technology-related blogs, providing a diverse range of articles covering tech, knowledge, and insights. Our platform invites everyone to contribute their thoughts, share expertise, and engage in discussions on our forums. Join our community to explore the latest trends, dive into tech-related topics, and exchange ideas in an interactive environment." />
+	<meta name="author" content="Passionate about crafting robust solutions using .NET technologies, constantly exploring new trends in software development and contributing to the tech community." />
+	<title>@ViewData["Title"] - @vm.SiteName</title>
+	<link rel="icon" type="image/x-icon" href="~/bootstrap/assets/innovation.ico" />
+	<link rel="stylesheet" href="~/bootstrap/css/Loader.css">
+
+	<link rel="stylesheet" href="~/bootstrap/css/customStyle.css">
+	<link rel="stylesheet" href="~/bootstrap/css/styles.css" media="all">
+	<link rel="stylesheet" href="~/bootstrap/css/thumbnail.css">
+	<link rel="stylesheet" href="~/bootstrap/css/tag.css">
+	@*	<link rel="stylesheet" href="~/forum/styles.css">
+	*@
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" />
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9067129215332668"
+			crossorigin="anonymous"></script>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-76FS0KRMBG"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag() { dataLayer.push(arguments); }
+	gtag('js', new Date());
+
+	gtag('config', 'G-76FS0KRMBG');
+</script>
+<body>
+
+	<div class="loader-wrapper">
+		<div class="loader"></div>
+	</div>
+	<!-- Responsive navbar-->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <!-- Brand -->
+            <a class="custom-navbar-brand" asp-controller="Home" asp-action="Index">@vm.SiteName</a>
+            <!-- Toggler/collapsibe Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <!-- Navbar links -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="custom-nav-item"><a class="nav-link active" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="custom-nav-item"><a class="nav-link" asp-controller="Home" asp-action="GetTags">Tags</a></li>
+                </ul>
+                <!-- Search form -->
+                <form class="d-flex ms-auto me-3" asp-controller="Home" asp-action="Index" method="get">
+                    <input class="form-control me-2" type="search" placeholder="Search..." aria-label="Search" name="keyword">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </form>
+                <!-- Login -->
+                @if (User.Identity!.IsAuthenticated)
+                {
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">
+                            Hello @User.Identity.Name
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" asp-area="Admin" asp-controller="Post" asp-action="Index">Dashboard</a></li>
+                            <li><a class="dropdown-item" asp-controller="Post" asp-action="CreatePost" asp-area="Admin">Create Post</a></li>
+                            <li>
+                                <form asp-action="Logout" asp-controller="User" asp-area="Admin" method="post">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                        Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <a class="nav-link" asp-area="Admin" asp-controller="User" asp-action="Login">Login</a>
+                }
+            </div>
+        </div>
+    </nav>
+
+
+	<!-- Page content-->
+	<div class="main-content">
+		@RenderBody()
+	</div>
+	<button id="moveToTopBtn" onclick="moveToTop()" title="MoveToTop">↑</button>
+
+	<!-- Footer -->
+	<footer class="py-5 custom-footer">
+		<div class="container">
+			<p class="m-0 text-center text-white">
+				Copyright &copy;@vm.SiteName 2023
+			</p>
+		</div>
+	</footer>
+
+</body>
+</html>
+<!-- Bootstrap core JS-->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Notification-->
+<script src="~/dashboard/vendor/jquery/jquery.min.js"></script>
+
+@await Component.InvokeAsync("Notyf")
+@await RenderSectionAsync("Scripts", required: false)
+<!-- Core theme JS-->
+<script src="~/bootstrap/js/Loader.js"></script>
+
+<script src="~/bootstrap/js/scripts.js"></script>
+<script src="~/bootstrap/js/moveToTop.js"></script>
+

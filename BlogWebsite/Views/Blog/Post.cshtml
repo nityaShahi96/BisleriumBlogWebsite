@@ -1,0 +1,391 @@
+﻿@model BlogWebsite.ViewModels.BlogPostVM
+@using Microsoft.AspNetCore.Http
+
+@{
+	var request = ViewContext.HttpContext.Request;
+}
+@{
+	ViewData["Title"] = "Post";
+	string thumbnailUrl = "";
+	if (Model.ThumbnailUrl == null)
+	{
+		thumbnailUrl = "/bootstrap/assets/default_image.webp";
+	}
+	else
+	{
+		thumbnailUrl = "/thumbnails/" + Model.ThumbnailUrl;
+	}
+}
+
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<ApplicationUser> _userManager;
+
+<main class="mt-4 mb-5">
+	<div class="container">
+		<div class="row">
+			<!--Grid column-->
+			<div class="col-md-8 mb-4" id="contentColumn">
+				<!--Section: Post data-mdb-->
+				<section class="border-bottom mb-4">
+					<img src="@thumbnailUrl" class="img-fluid shadow-2-strong rounded-5 mb-4" alt="@Model.Title" /><br>
+					<span class="meta">
+						<i class="fa-solid fa-user"></i> <b>@Model.AuthorName</b><br>
+						<i class="fa-solid fa-clock"></i> @Model.CreatedDate.ToLongDateString() | @Model.CreatedDate.ToShortTimeString()<br>
+						<i class="fa-solid fa-eye"></i> @Model.ViewCount<br>
+					</span>
+					<hr />
+					<div class="row align-items-center mb-4">
+						<div class="col-lg-9 text-center text-lg-start mb-3 m-lg-0">
+							<h1 style="display: block;color:#B03A2E;">@Model.Title</h1>
+
+							@if (!string.IsNullOrEmpty(Model.TagName))
+							{
+								<button type="button" class="btn px-3 me-1" style="color:white;background-color: #146138;">
+									@Model.TagName
+								</button>
+							}
+							else
+							{
+								<button type="button" class="btn px-3 me-1" style="background-color: #146138;">
+									None Tag
+								</button>
+							}
+
+
+						</div>
+						<div class="col-lg-3 text-center text-lg-end">
+							<div class="d-flex justify-content-end">
+								
+								<button type="button" class="btn btn-primary px-3 me-1" aria-label="Facebook" title="facebook" style="background-color: #3b5998;">
+									<i class="fab fa-facebook-f"></i>
+								</button>
+								<button type="button" class="btn btn-primary px-3 me-1" aria-label="twitter" title="twitter" style="background-color: #55acee;">
+									<i class="fab fa-twitter"></i>
+								</button>
+								<button type="button" class="btn btn-primary px-3 me-1" aria-label="linkedin" title="linkedin" style="background-color: #0082ca;">
+									<i class="fab fa-linkedin"></i>
+								</button>
+								<button onclick="scrollToCommentList()" type="button" aria-label="comments" title="comments" class="btn btn-primary px-3 me-1">
+									<i class="fas fa-comments"></i>
+								</button>
+							</div>
+							<br />
+							@{
+								bool loggedInUser = User.Identity?.IsAuthenticated ?? false;
+								string currentUserId = "";
+
+								if (loggedInUser)
+								{
+									var currentUser = await _userManager.GetUserAsync(User);
+									currentUserId = currentUser?.Id!;
+								}
+
+								bool hasLiked = Model.Reactions?.Any(r => r.UserId == currentUserId) ?? false;
+							}
+
+							<form asp-controller="Blog" asp-action="LikePost" method="post" style="display: flex; align-items: center;">
+								<input type="hidden" name="postId" value="@Model.Id" />
+								<div style="margin-right: 10px;">
+									@if (loggedInUser)
+									{
+										@if (hasLiked)
+										{
+											<button id="likeButton" type="submit" style="background-color:white; border:none;">
+												<i class="fa-solid fa-heart fa-2xl" style="color: #c02a39;"></i>
+											</button>
+										}
+										else
+										{
+											<button id="likeButton" type="submit" style="background-color:white; border:none;">
+												<i class="fa-regular fa-heart fa-2xl"></i>
+											</button>
+										}
+									}
+									else
+									{
+										<button id="likeButton" type="submit" style="background-color:white; border:none;">
+											<i class="fa-regular fa-heart fa-2xl"></i>
+										</button>
+									}
+								</div>
+								<div>
+									<i id="likeCount" style="color:black; font-size:30px;">@Model.LikeCount</i>
+								</div>
+							</form>
+
+
+
+						</div>
+					</div>
+				</section>
+
+
+
+				<!--Section: Post data-mdb-->
+				<!--Section: Text-->
+				<div class="description-text">
+					@Html.Raw(Model.Description)
+				</div>
+				<!--Section: Text-->
+				<!--Section: Share buttons-->
+				<section class="text-center border-top border-bottom py-4 mb-4">
+					<p><strong>Share with your friends:</strong></p>
+
+					<button type="button" class="btn btn-primary px-3 me-1" aria-label="Facebook" title="facebook" style="background-color: #3b5998;">
+						<i class="fab fa-facebook-f"></i>
+					</button>
+					<button type="button" class="btn btn-primary px-3 me-1" aria-label="twitter" title="twitter" style="background-color: #55acee;">
+						<i class="fab fa-twitter"></i>
+					</button>
+					<button type="button" class="btn btn-primary px-3 me-1" aria-label="linkedin" title="linkedin" style="background-color: #0082ca;">
+						<i class="fab fa-linkedin"></i>
+					</button>
+				</section>
+				<!--Section: Share buttons-->
+				<!--Section: Comments-->
+				<!--Section: Reply-->
+				@if (User.Identity!.IsAuthenticated)
+				{
+					<button name="link" onclick="toggleCommentForm(event)" aria-label="Add Comment" title="comments" class="btn btn-primary me-1">
+						<i class="fas fa-comments me-2"></i>Add Comment
+					</button>
+					<form id="commentForm" asp-controller="Blog" asp-action="AddComment" method="post" style="display: none;">
+						
+						<input type="hidden" name="postId" value="@Model.Id" /> 
+						<div class="form-outline mb-2">
+							<textarea class="form-control mt-2" id="description" name="description" rows="4" required aria-label="Description" placeholder="Enter Your Comment Here..." aria-required="true"></textarea>
+						</div>
+						<button type="submit" class="btn btn-primary btn-block mb-2 mt-2">Submit Comment</button>
+					</form>
+				}
+				else
+				{
+					<a type="button" asp-action="Login" asp-controller="User" asp-area="Admin" aria-label="Add Comment" title="comments" class="btn btn-primary me-1"><i class="fas fa-comments me-2"></i>Add Comment</a>
+				}
+
+
+
+				<!--Section: Comments-->
+				
+				<section id="commentListSection" class="gradient-custom">
+					
+					<div class="container my-5 py-5">
+						<div class="row">
+							<div class="col text-center">
+								<ul class="nav nav-tabs" id="commentTabs" role="tablist">
+									<li class="nav-item" role="presentation">
+										<button class="nav-link active" id="allComment-tab" data-bs-toggle="tab" data-bs-target="#allComment" type="button" role="tab" aria-controls="allComment" aria-selected="true">All Comment</button>
+									</li>
+									@if (User.Identity!.IsAuthenticated)
+									{
+										<li class="nav-item" role="presentation">
+											<button class="nav-link" id="myComment-tab" data-bs-toggle="tab" data-bs-target="#myComment" type="button" role="tab" aria-controls="myComment" aria-selected="false">My Comment</button>
+										</li>
+									}
+
+								</ul>
+							</div>
+						</div>
+						<div class="tab-content mt-4" id="commentTabsContent">
+							<div class="tab-pane fade show active" id="allComment" role="tabpanel" aria-labelledby="allComment-tab">
+								
+								@if (Model.Comments != null && Model.Comments.Count > 0)
+								{
+
+									@if (Model.Comments.Count != 1)
+									{
+										<p class="text-center text-dark">
+											@Model.Comments.Count Comments
+										</p>
+									}
+									else
+									{
+										<p class="text-center text-dark">
+											@Model.Comments.Count Comment
+										</p>
+									}
+
+									<div class="row">
+										<div class="col">
+											<ul class="list-unstyled">
+												
+												@foreach (var comment in Model.Comments!.Where(c => c.ParentCommentId == null))
+												{
+													
+													<li class="media my-4">
+														
+														<div class="media-body">
+															<h5 class="mt-0 mb-1" style="color: #333;">@comment.ApplicationUsers!.UserName <span class="small">- @comment.CreatedDate.ToShortDateString()</span></h5>
+															<p style="color: #555;">@comment.Description</p>
+															
+															<button class="btn btn-sm btn-primary" onclick="showReplyForm(@comment.Id)">
+																Reply
+															</button>
+															<form id="replyForm_@comment.Id" class="mt-3 d-none" asp-controller="Blog" asp-action="AddReply" method="post">
+																<input type="hidden" name="parentId" value="@comment.Id" />
+																<input type="hidden" name="postId" value="@Model.Id" />
+																<input type="hidden" name="replyTo" value="@comment.ApplicationUsers.UserName" />
+																<div class="form-outline mb-4">
+																	<label class="form-label" for="description">Reply</label>
+																	<textarea class="form-control" id="replyDescription_@comment.Id" name="description" rows="2" required aria-label="Your Reply" placeholder="Enter Your Reply Here" aria-required="true"></textarea>
+																</div>
+																<button type="submit" class="btn btn-primary btn-sm">Submit Reply</button>
+															</form>
+
+															
+															<ul>
+																@foreach (var childComment in Model.Comments.Where(c => c.ParentCommentId == comment.Id))
+																{
+																	<li class="media my-4" style="margin-left: 20px;">
+																		<div class="media-body">
+																			<h5 class="mt-0 mb-1" style="color: #333;">@childComment.ApplicationUsers!.UserName <span class="small">- @childComment.CreatedDate.ToShortDateString()</span></h5>
+																			<p style="color: #555;">@childComment.Description</p>
+																		</div>
+																	</li>
+																}
+															</ul>
+														</div>
+													</li>
+												}
+											</ul>
+										</div>
+									</div>
+								}
+								else
+								{
+									
+									<p class="text-center text-dark">0 Comment</p>
+								}
+							</div>
+
+							<div class="tab-pane fade" id="myComment" role="tabpanel" aria-labelledby="myComment-tab">
+								
+								@if (Model.MyComments != null && Model.MyComments.Count > 0)
+								{
+									@if (Model.MyComments!.Count != 1)
+									{
+										<p class="text-center text-dark">
+											@Model.MyComments.Count Comments
+										</p>
+									}
+									else
+									{
+										<p class="text-center text-dark">
+											@Model.MyComments.Count Comment
+										</p>
+									}
+									<div class="row">
+										<div class="col">
+											<ul class="list-unstyled">
+												@foreach (var comment in Model.MyComments)
+												{
+													
+													<li class="media my-4">
+														
+														<div class="media-body">
+														
+															<h5 class="mt-0 mb-1" style="color: #333;">@comment.ApplicationUsers!.UserName <span class="small">- @comment.CreatedDate.ToShortDateString()</span></h5>
+															<p style="color: #555;">@comment.Description</p>
+															
+															@if (User.Identity!.IsAuthenticated && comment.ApplicationUsers != null && comment.ApplicationUsers.UserName == User.Identity.Name)
+															{
+																<form id="deleteForm_@comment.Id" class="mt-3" asp-controller="Blog" asp-action="DeleteComment" method="post">
+																	<input type="hidden" name="commentId" value="@comment.Id" />
+																	<button type="submit" class="btn btn-danger btn-sm">Delete</button>
+																</form>
+															}
+														</div>
+													</li>
+												}
+											</ul>
+										</div>
+									</div>
+								}
+								else
+								{
+									<p class="text-center text-dark">
+										0 Comment
+									</p>
+								}
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<!--Section: Reply-->
+			</div>
+		</div>
+		<div class="col-md-3 mb-4" id="sidebarColumn">
+			<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9067129215332668"
+					crossorigin="anonymous"></script>
+			
+			<ins class="adsbygoogle"
+				 style="display:block"
+				 data-ad-client="ca-pub-9067129215332668"
+				 data-ad-slot="3067778742"
+				 data-ad-format="auto"
+				 data-full-width-responsive="true"></ins>
+			<script>
+				(adsbygoogle = window.adsbygoogle || []).push({});
+			</script>
+		</div>
+		<!--Grid column-->
+	</div>
+</main>
+
+
+
+
+
+
+<script>
+	
+	window.onload = function () {
+		resizeImages();
+	};
+
+	
+	function resizeImages() {
+		var contentColumn = document.getElementById('contentColumn');
+		var images = contentColumn.getElementsByTagName('img');
+
+		for (var i = 0; i < images.length; i++) {
+			if (images[i].naturalWidth > contentColumn.offsetWidth * 1) {
+				images[i].style.maxWidth = '100%';
+				images[i].style.height = 'auto';
+			}
+		}
+	}
+</script>
+<script>
+	function scrollToCommentList() {
+		var commentSection = document.getElementById('commentListSection');
+		if (commentSection) {
+			commentSection.scrollIntoView({ behavior: 'smooth' });
+		}
+	}
+</script>
+<script>
+	function showReplyForm(commentId) {
+		var replyForm = document.getElementById(`replyForm_${commentId}`);
+		if (replyForm) {
+			if (replyForm.classList.contains('d-none')) {
+				replyForm.classList.remove('d-none');
+			} else {
+				replyForm.classList.add('d-none');
+			}
+		}
+	}
+
+
+	function toggleCommentForm(event) {
+		event.preventDefault();
+		var commentForm = document.getElementById('commentForm');
+		if (commentForm.style.display === 'none') {
+			commentForm.style.display = 'block';
+		} else {
+			commentForm.style.display = 'none';
+		}
+	}
+
+</script>

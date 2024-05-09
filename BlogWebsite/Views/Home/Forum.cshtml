@@ -1,0 +1,17 @@
+﻿@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common;
+
+@{
+	ViewData["Title"] = "Forum";
+}
+
+<div class="container">
+	<div class="topic-buttons mt-3 mb-1">
+		<h3>Topics: </h3>
+		
+		@foreach (var topic in Model.topics!)
+		{
+			<a asp-action="ForumPostTopic" asp-controller="Home" asp-route-id="@topic.Id" type="button" class="btn btn-outline-secondary btn-sm mr-1">@topic.Name</a>
+		}
+	</div>
+</div>

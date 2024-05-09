@@ -1,0 +1,78 @@
+﻿@model BlogWebsite.ViewModels.CreateForumPostVM
+
+@{
+	ViewData["Title"] = "Create Forum Post";
+}
+
+<div class="container-fluid">
+	<a class="btn btn-dark mb-2 mt-2" asp-action="Index" asp-controller="ForumPost" asp-area="Admin">Go Back</a>
+	<div class="card">
+		<div class="card-header bg-dark">
+			<h4 class="card-title text-white">New Post</h4>
+		</div>
+		<div class="card-body">
+			<form asp-action="CreateForumPost" asp-controller="Forum" asp-area="Admin" enctype="multipart/form-data">
+				<div class="row mb-2">
+					<div class="col-12">
+						<div class="mb-2">
+							<label>Title</label>
+							<input type="text" asp-for="Title" class="form-control" />
+							<span asp-validation-for="Title" class="text-danger"></span>
+						</div>
+						<div class="mb-2">
+							<label>Topic</label>
+							<input type="text" asp-for="TopicName" class="form-control" id="topics" list="topics-list" />
+							<datalist id="topics-list"></datalist>
+							<span id="topic-error" class="text-danger"></span> 
+						</div>
+
+						<div class="mb-2">
+							<label>Description</label>
+							<textarea id="textarea" asp-for="Description" class="form-control" rows="8"></textarea>
+							<span asp-validation-for="Description" class="text-danger"></span>
+						</div>
+					</div>
+
+				</div>
+				<div class="mb-2">
+					<button type="submit" class="btn btn-primary w-100">Save</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Scripts{
+	<partial name="_ValidationScriptsPartial" />
+	
+	<script>
+		$(document).ready(function () {
+			$("#topics").keyup(function () {
+				var input = $(this).val();
+				if (input.length >= 1) { 
+					$.ajax({
+						url: "/Admin/Forum/AutocompleteTopics", 
+						type: "GET",
+						data: { keyword: input },
+						success: function (data) {
+							$("#topics-list").empty();
+							$.each(data, function (index, value) {
+								$("#topics-list").append('<option value="' + value + '"></option>');
+							});
+						}
+					});
+				}
+			});
+		});
+
+		$(document).ready(function () {
+			$("form").submit(function (event) {
+				var topic = $("#topics").val(); 
+				if (topic.trim() === "") { 
+					$("#topic-error").text("Please enter a topic"); 
+					$("#topics").focus();
+					event.preventDefault(); 
+				}
+			});
+		});
+	</script>
+}
